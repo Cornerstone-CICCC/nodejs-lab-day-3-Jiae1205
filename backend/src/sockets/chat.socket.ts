@@ -1,33 +1,74 @@
-import { Server, Socket } from 'socket.io';
-import { Chat } from '../models/chat.model';
+import { Server, Socket } from "socket.io";
+import { Chat } from "../models/chat.model";
 
 const setupChatSocket = (io: Server) => {
-  io.on('connection', (socket: Socket) => {
-    // On connect
-    console.log(`User connected: ${socket.id}`);
+  io.on("connection", (socket: Socket) => {
+    console.log("User connected:", socket.id);
 
-    // Listen to 'sendMessage' event
-    socket.on('sendMessage', async (data) => {
-      const { username, message } = data;
+    let currentRoom: string | null = null;
 
-      try {
-        // Save message to MongoDB
-        const chat = new Chat({ username, message });
-        await chat.save();
+    // ------------------------------
+    // 1) Join Room
+    // ------------------------------
+    socket.on("room:join", async (roomName: string) => {
+      console.log(`${socket.id} joined room: ${roomName}`);
 
-        // Broadcast the chat object to all connected clients via the newMessage event
-        io.emit('newMessage', chat);
-        
-        // For room-based broadcast
-        // io.to(data.room).emit('newMessage', chat)
-      } catch (error) {
-        console.error('Error saving chat:', error);
+      // Leave previous room
+      if (currentRoom) {
+        socket.leave(currentRoom);
+        socket.to(currentRoom).emit("system:message", `Someone left the room`);
       }
+
+      currentRoom = roomName;
+      socket.join(roomName);
+
+      // Send old messages of this room
+      const messages = await Chat.find({ room: roomName })
+        .sort({ createdAt: 1 })
+        .lean();
+
+      socket.emit("chat:history", messages);
+
+      // Notify others in this room
+      socket.to(roomName).emit("system:message", `Someone joined the room`);
     });
 
-    // On disconnect
-    socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.id}`);
+    // ------------------------------
+    // 2) Leave Room
+    // ------------------------------
+    socket.on("room:leave", () => {
+      if (currentRoom) {
+        socket.to(currentRoom).emit("system:message", `Someone left the room`);
+        socket.leave(currentRoom);
+        currentRoom = null;
+      }
+
+      socket.emit("room:left"); // Tell frontend to clear messages
+    });
+
+    // ------------------------------
+    // 3) Send Message
+    // ------------------------------
+    socket.on(
+      "chat:message",
+      async (data: { username: string; message: string }) => {
+        if (!currentRoom) return;
+
+        const newChat = await Chat.create({
+          username: data.username,
+          message: data.message,
+          room: currentRoom,
+        });
+
+        io.to(currentRoom).emit("chat:message", newChat);
+      }
+    );
+
+    // ------------------------------
+    // 4) On Disconnect
+    // ------------------------------
+    socket.on("disconnect", () => {
+      console.log("User disconnected:", socket.id);
     });
   });
 };

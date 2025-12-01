@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat App with Rooms</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 30px;
+        max-width: 600px;
+      }
+
+      #roomButtons button {
+        margin-right: 10px;
+        padding: 7px 14px;
+        border: none;
+        background: #2196f3;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      #messages {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        height: 300px;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      #messages li {
+        margin-bottom: 10px;
+        padding: 5px 8px;
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+
+      #systemMessage {
+        font-style: italic;
+        color: #888;
+        margin-top: 10px;
+      }
+
+      input {
+        padding: 8px;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        margin-right: 10px;
+      }
+
+      button {
+        padding: 8px 12px;
+        cursor: pointer;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📨 Chat App (Rooms)</h1>
+
+    <div id="roomButtons">
+      <button class="room-btn" data-room="general">General</button>
+      <button class="room-btn" data-room="games">Games</button>
+      <button class="room-btn" data-room="random">Random</button>
+    </div>
+
+    <p id="current-room">Current room: (none)</p>
+    <p id="systemMessage"></p>
+
+    <div>
+      <input id="username" placeholder="Username" />
+      <input id="message" placeholder="Message" />
+      <button id="sendBtn">Send</button>
+    </div>
+
+    <ul id="messages"></ul>
+
+    <!-- Socket.io CDN -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- main.js -->
+    <script src="main.js"></script>
+  </body>
+</html>
